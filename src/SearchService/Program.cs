@@ -1,3 +1,7 @@
+using MongoDB.Driver;
+using MongoDB.Entities;
+using SearchService;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -14,4 +18,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+try
+{
+    await DbInitializer.InitDb(app);
+}
+catch (Exception e)
+{
+    Console.WriteLine(e.ToString());
+}
 app.Run();
