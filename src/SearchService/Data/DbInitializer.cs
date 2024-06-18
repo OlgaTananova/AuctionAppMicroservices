@@ -21,16 +21,12 @@ public class DbInitializer
 
         var count = await DB.CountAsync<Item>();
 
-        if (count == 0){
+        IServiceScope scope = app.Services.CreateScope();
+        AuctionServiceHttpClient httpClient = scope.ServiceProvider.GetRequiredService<AuctionServiceHttpClient>();
+        List<Item> items = await httpClient.GetItemsForSearchDb();
+        Console.WriteLine(items.Count);
 
-            Console.WriteLine("No data - will attempt to seed");
-            string itemData = await File.ReadAllTextAsync("Data/auctions.json");
-            JsonSerializerOptions options = new JsonSerializerOptions{PropertyNameCaseInsensitive = true};
-
-            List<Item> items = JsonSerializer.Deserialize<List<Item>>(itemData, options);
-
-            await DB.SaveAsync(items);
-
-        }
+        if(items.Count >  0) await DB.SaveAsync(items);
+        
     }
 }
