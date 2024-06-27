@@ -1,4 +1,5 @@
 ﻿using AuctionService.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuctionService.Data;
@@ -17,6 +18,13 @@ public class AuctionDbContext : DbContext
         
         modelBuilder.Entity<Item>()
         .HasOne(e => e.Auction);
+
+        // Configure the database for outbox service 
+
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
     
 

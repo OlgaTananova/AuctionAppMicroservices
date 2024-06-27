@@ -1,6 +1,6 @@
 using AuctionService.Data;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using MassTransit;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +33,15 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // Add MassTransit
 builder.Services.AddMassTransit(x =>
 {
+    // Configure outbox in case rabbitmq is down. It will allow to store the message in the outbox,
+    // check if rabbitmq service is up again, get the delayed message and send it to the message broker
+    x.AddEntityFrameworkOutbox<AuctionDbContext>(o =>
+    {
+        o.QueryDelay = TimeSpan.FromSeconds(10);
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.ConfigureEndpoints(context);

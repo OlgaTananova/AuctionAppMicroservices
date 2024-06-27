@@ -3,6 +3,8 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,11 +17,13 @@ public class AuctionsController: ControllerBase
 {
     private readonly AuctionDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public AuctionsController(AuctionDbContext context, IMapper mapper)
+    public AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _context = context;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
     [HttpGet]
     public async Task<ActionResult<List<AuctionDto>>> GetAllAuctions(string date){
@@ -51,11 +55,19 @@ public class AuctionsController: ControllerBase
         // TODO: add current user as seller
         auction.Seller = "test";
         _context.Auctions.Add(auction);
+
+        // Create a message to send to the message brocker
+        AuctionDto newAuction = _mapper.Map<AuctionDto>(auction);
+
+        await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
+
         bool result = await _context.SaveChangesAsync() > 0;
+
         if (!result) return BadRequest("Could not save changes to the DB");
 
         // return 201 response and pass the method that returns the created auction and maps it to AuctionDto
-        return CreatedAtAction(nameof(GetAuctioinById), new {auction.Id}, _mapper.Map<AuctionDto>(auction));
+        return CreatedAtAction(nameof(GetAuctioinById), new {auction.Id}, newAuction);
     }
 
     [HttpPut("{id}")]
