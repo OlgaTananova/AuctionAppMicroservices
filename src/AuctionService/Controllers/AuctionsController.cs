@@ -79,13 +79,21 @@ public class AuctionsController: ControllerBase
 
         if (auction == null) return NotFound();
 
-        // TODO: check selle == username
+        // TODO: check seller == username
 
         auction.Item.Make = updateAuctionDto.Make ?? auction.Item.Make;
         auction.Item.Model = updateAuctionDto.Model ?? auction.Item.Model;
         auction.Item.Color = updateAuctionDto.Color ?? auction.Item.Color;
         auction.Item.Milage = updateAuctionDto.Milage ?? auction.Item.Milage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
+
+        // Create UpdatedAuctionDTO from the auction using Automapper
+
+        AuctionUpdated updatedAuction = _mapper.Map<AuctionUpdated>(auction);
+
+        // Publish an updated auction message to the message brocker
+
+        await _publishEndpoint.Publish(updatedAuction);
 
         bool result = await _context.SaveChangesAsync() > 0;
 

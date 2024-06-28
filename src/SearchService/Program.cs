@@ -16,7 +16,9 @@ builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetP
 // Add MassTransit
 builder.Services.AddMassTransit(async x =>
 {
+    // Add consumers to the massage brocker
     x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
+    x.AddConsumersFromNamespaceContaining<AuctionUpdatedConsumer>();
 
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
 
@@ -29,6 +31,9 @@ builder.Services.AddMassTransit(async x =>
             e.ConfigureConsumer<AuctionCreatedConsumer>(context);
         });
         cfg.ConfigureEndpoints(context);
+
+        // TODO: configure retrying to consume a message when an auction has been updated if the db is down
+
     });
 });
 
