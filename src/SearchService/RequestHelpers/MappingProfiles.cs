@@ -7,8 +7,8 @@ namespace SearchService
     {
         public MappingProfiles()
         {
+            // Map entities for Automapper
             CreateMap<AuctionCreated, Item>();
-            // ??
             CreateMap<AuctionUpdated, Item>();
         }
     }

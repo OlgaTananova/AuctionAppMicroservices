@@ -112,7 +112,11 @@ public class AuctionsController: ControllerBase
 
         // TODO: check seller = username
 
-        _context.Remove(auction);
+        _context.Auctions.Remove(auction);
+
+        // Publish an event to the massage bus 
+
+        await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
 
         bool result = await _context.SaveChangesAsync() > 0;
         if (!result) return BadRequest("Could not update DB");
