@@ -25,14 +25,17 @@ builder.Services.AddMassTransit(async x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.ReceiveEndpoint("search-auction-created", e =>
+         cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
+            host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+            host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
+        });
+         cfg.ReceiveEndpoint("search-auction-created", e =>
         {
             // if the db is down the massage bus will retry to deliver the message 5 times with an interval of 5 sec
             e.UseMessageRetry(r => r.Interval(5, 5));
             e.ConfigureConsumer<AuctionCreatedConsumer>(context);
         });
         cfg.ConfigureEndpoints(context);
-
         // TODO: configure retrying to consume a message when an auction has been updated if the db is down
 
     });
