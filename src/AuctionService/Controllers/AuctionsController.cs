@@ -16,38 +16,31 @@ namespace AuctionService.Controllers;
 
 public class AuctionsController: ControllerBase
 {
-    private readonly AuctionDbContext _context;
+    private readonly IAuctionRepositiory _repo;
     private readonly IMapper _mapper;
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
+    public AuctionsController(IAuctionRepositiory repo, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
-        _context = context;
+        _repo = repo;
         _mapper = mapper;
         _publishEndpoint = publishEndpoint;
     }
     [HttpGet]
     public async Task<ActionResult<List<AuctionDto>>> GetAllAuctions(string date){
         
-        IQueryable<Auction> query = _context.Auctions.OrderBy(x => x.Item.Make).AsQueryable();
-
-        if (!string.IsNullOrEmpty(date)){
-            query = query.Where( x => x.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime()) > 0 );
-        }
-
-        return await query.ProjectTo<AuctionDto>(_mapper.ConfigurationProvider).ToListAsync();
+        return await _repo.GetAuctionsAsync(date);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<AuctionDto>> GetAuctioinById(Guid id){
-        var auction = await _context.Auctions
-        .Include(x => x.Item)
-        .FirstOrDefaultAsync(x => x.Id == id);
+    public async Task<ActionResult<AuctionDto>> GetAuctionById(Guid id){
+        
+        var auction = await _repo.GetAuctionByIdAsync(id);
 
         if (auction == null){
             return NotFound();
         }
-        return _mapper.Map<AuctionDto>(auction);
+        return auction;
     }
 
     [Authorize]
@@ -58,7 +51,7 @@ public class AuctionsController: ControllerBase
 
         auction.Seller = User.Identity.Name;
 
-        _context.Auctions.Add(auction);
+        _repo.AddAuction(auction);
 
         // Create a message to send to the message brocker
         AuctionDto newAuction = _mapper.Map<AuctionDto>(auction);
@@ -66,21 +59,20 @@ public class AuctionsController: ControllerBase
         await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
 
 
-        bool result = await _context.SaveChangesAsync() > 0;
+        bool result = await _repo.SaveChangesAsync();
 
         if (!result) return BadRequest("Could not save changes to the DB");
 
         // return 201 response and pass the method that returns the created auction and maps it to AuctionDto
-        return CreatedAtAction(nameof(GetAuctioinById), new {auction.Id}, newAuction);
+        return CreatedAtAction(nameof(GetAuctionById), new {auction.Id}, newAuction);
     }
 
     [HttpPut("{id}")]
 
     public async Task<ActionResult> UpdateAuction(Guid id, UpdateAuctionDto updateAuctionDto)
     {
-        Auction auction = await _context.Auctions.Include(i => i.Item)
-        .FirstOrDefaultAsync(x => x.Id == id);
-
+        Auction auction = await _repo.GetAuctionEntityByIdAsync(id);
+        
         if (auction == null) return NotFound();
 
 
@@ -100,7 +92,7 @@ public class AuctionsController: ControllerBase
 
         await _publishEndpoint.Publish(updatedAuction);
 
-        bool result = await _context.SaveChangesAsync() > 0;
+        bool result = await _repo.SaveChangesAsync();
 
         if (!result) return BadRequest("Problem saving changes");
 
@@ -111,19 +103,20 @@ public class AuctionsController: ControllerBase
     public async Task<ActionResult> DeleteAuction(Guid id)
     {
 
-        Auction auction = await _context.Auctions.FindAsync(id);
+        Auction auction = await _repo.GetAuctionEntityByIdAsync(id);
 
         if (auction == null) return NotFound();
 
         if (auction.Seller != User.Identity.Name) return Forbid();
 
-        _context.Auctions.Remove(auction);
+        _repo.RemoveAuction(auction);
 
         // Publish an event to the massage bus 
 
         await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
 
-        bool result = await _context.SaveChangesAsync() > 0;
+        bool result = await _repo.SaveChangesAsync();
+        
         if (!result) return BadRequest("Could not update DB");
 
         return Ok();
