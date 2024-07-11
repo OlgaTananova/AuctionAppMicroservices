@@ -99,3 +99,5 @@ catch (Exception e)
 //app.Urls.Add("http://localhost:7001");
 
 app.Run();
+
+public partial class Program { }
