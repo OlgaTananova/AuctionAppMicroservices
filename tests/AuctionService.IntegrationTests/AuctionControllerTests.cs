@@ -13,7 +13,10 @@ using System.Threading.Tasks;
 
 namespace AuctionService.IntegrationTests
 {
-    public class AuctionControllerTests : IClassFixture<CustomWebAppFactory>, IAsyncLifetime
+    // Integration tests for the AuctionController using xUnit, IClassFixture for shared test context, and IAsyncLifetime for async setup/teardown.
+
+    [Collection("SharedCollection")]
+    public class AuctionControllerTests :  IAsyncLifetime
     {
         private readonly CustomWebAppFactory _factory;
         private readonly HttpClient _httpClient;
@@ -25,7 +28,8 @@ namespace AuctionService.IntegrationTests
             _httpClient = _factory.CreateClient();
         }
         public Task InitializeAsync() => Task.CompletedTask;
-        
+
+        // Async dispose method to reset the database using a helper method.
         public Task DisposeAsync()
         {
             using var scope = _factory.Services.CreateScope();
@@ -34,6 +38,7 @@ namespace AuctionService.IntegrationTests
             return Task.CompletedTask;
         }
 
+        // Helper method to create a valid CreateAuctionDto.
         private CreateAuctionDto GetAuctionForCreate()
         {
             return new CreateAuctionDto
@@ -48,6 +53,7 @@ namespace AuctionService.IntegrationTests
             };
         }
 
+        // Test to verify GetAuctions returns 3 auctions.
         [Fact]
         public async Task GetAuctions_ShouldReturn3Auctions()
         {
@@ -62,6 +68,8 @@ namespace AuctionService.IntegrationTests
             Assert.Equal(3, response.Count);
         }
 
+        // Test to verify GetAuctionById returns the correct auction for a valid ID.
+
         [Fact]
         public async Task GetAuctionById_WithValidId_ShouldReturnAuction()
         {
@@ -73,6 +81,8 @@ namespace AuctionService.IntegrationTests
 
             Assert.Equal("GT", response.Model);
         }
+
+        // Test to verify GetAuctionById returns 404 for an invalid ID.
 
         [Fact]
         public async Task GetAuctionById_WithInvalidId_ShouldReturn404NotFound()
@@ -86,6 +96,8 @@ namespace AuctionService.IntegrationTests
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
+        // Test to verify GetAuctionById returns 400 for an invalid GUID.
+
         [Fact]
         public async Task GetAuctionById_WithInvalidGuid_ShouldReturn400BadRequest()
         {
@@ -97,6 +109,8 @@ namespace AuctionService.IntegrationTests
             
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
+
+        // Test to verify CreateAuction returns 401 Unauthorized when no authentication is provided.
 
         [Fact]
         public async Task CreateAuction_WithNoAuth_ShouldReturn401Unauth()
@@ -111,6 +125,8 @@ namespace AuctionService.IntegrationTests
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
+
+        // Test to verify CreateAuction returns 201 Created when valid authentication and data are provided.
 
         [Fact]
         public async Task CreateAuction_WithAuth_ShouldReturn201Created()
@@ -130,6 +146,66 @@ namespace AuctionService.IntegrationTests
 
             AuctionDto createdAucton = await response.Content.ReadFromJsonAsync<AuctionDto>();
             Assert.Equal("bob", createdAucton.Seller);
+        }
+
+        // Test to verify CreateAuction returns 400 Bad Request when invalid data is provided.
+
+        [Fact]
+        public async Task CreateAuction_WithInvalidCreateAuctionDto_ShouldReturn400()
+        {
+            // arrange
+
+            CreateAuctionDto auction = GetAuctionForCreate();
+            auction.Color = null;
+            _httpClient.SetFakeJwtBearerToken(AuthHelper.GetBearerForUser("bob"));
+
+            // act
+
+            var response = await _httpClient.PostAsJsonAsync($"api/auctions", auction);
+
+            // assert
+            
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        }
+
+        // Test to verify UpdateAuction returns 200 OK when valid data and user are provided.
+
+        [Fact]
+        public async Task UpdateAuction_WithValidUpdateDtoAndUser_ShouldReturn200()
+        {
+            // arrange
+
+            _httpClient.SetFakeJwtBearerToken(AuthHelper.GetBearerForUser("bob"));
+            UpdateAuctionDto updateAuctionDto = new UpdateAuctionDto { Make = "FordUpdated" };
+
+            // act
+
+            var response = await _httpClient.PutAsJsonAsync($"api/auctions/{GT_ID}", updateAuctionDto);
+
+            // assert
+            var updatedAuction = await _httpClient.GetFromJsonAsync<AuctionDto>($"api/auctions/{GT_ID}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("FordUpdated", updatedAuction.Make);
+
+        }
+
+        // Test to verify UpdateAuction returns 403 Forbidden when an invalid user tries to update.
+
+        [Fact]
+        public async Task UpdateAuction_WithValidUpdateDtoAndInvalidUser_ShouldReturn403()
+        {
+            // arrange
+            _httpClient.SetFakeJwtBearerToken(AuthHelper.GetBearerForUser("alice"));
+            UpdateAuctionDto updateAuctionDto = new UpdateAuctionDto { Make = "FordUpdated" };
+
+            // act
+            var response = await _httpClient.PutAsJsonAsync($"api/auctions/{GT_ID}", updateAuctionDto);
+
+            // assert
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+          
         }
 
     }

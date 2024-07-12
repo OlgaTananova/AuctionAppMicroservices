@@ -29,14 +29,14 @@ builder.Services.AddDbContext<AuctionDbContext>(opt =>
 });
 
 
-// Automapper to map entities to DTOs
+// Configure AutoMapper to map entities to DTOs
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// Add MassTransit
+// Add and configure MassTransit for message-based communication
 builder.Services.AddMassTransit(x =>
 {
-    // Configure outbox in case rabbitmq is down. It will allow to store the message in the outbox,
-    // check if rabbitmq service is up again, get the delayed message and send it to the message broker
+    // Configure outbox to handle messages when RabbitMQ is down
     x.AddEntityFrameworkOutbox<AuctionDbContext>(o =>
     {
         o.QueryDelay = TimeSpan.FromSeconds(10);
@@ -44,9 +44,13 @@ builder.Services.AddMassTransit(x =>
         o.UseBusOutbox();
     });
 
+    // Add consumers from the specified namespace
     x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
+
+    // Set the endpoint name formatter to use kebab case
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
 
+    // Configure RabbitMQ with host and credentials from configuration
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
@@ -67,6 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters.NameClaimType = "username";
     });
 
+// Add scoped dependency injection for the AuctionRepository
 builder.Services.AddScoped<IAuctionRepositiory, AuctionRepository>();    
 
 var app = builder.Build();
@@ -86,7 +91,7 @@ app.MapControllers();
 
 try
 {
-
+    // Initialize the database
     DbInitializer.InitDb(app);
 
 }
@@ -100,4 +105,5 @@ catch (Exception e)
 
 app.Run();
 
+// Partial class definition for Program to support integration tests
 public partial class Program { }

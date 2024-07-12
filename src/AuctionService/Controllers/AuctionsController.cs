@@ -20,17 +20,23 @@ public class AuctionsController: ControllerBase
     private readonly IMapper _mapper;
     private readonly IPublishEndpoint _publishEndpoint;
 
+    // Constructor to inject dependencies: repository, mapper, and publish endpoint
     public AuctionsController(IAuctionRepositiory repo, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _repo = repo;
         _mapper = mapper;
         _publishEndpoint = publishEndpoint;
     }
+
+    // Endpoint to get all auctions, optionally filtered by date
+
     [HttpGet]
     public async Task<ActionResult<List<AuctionDto>>> GetAllAuctions(string date){
         
         return await _repo.GetAuctionsAsync(date);
     }
+
+    // Endpoint to get an auction by its ID
 
     [HttpGet("{id}")]
     public async Task<ActionResult<AuctionDto>> GetAuctionById(Guid id){
@@ -43,22 +49,26 @@ public class AuctionsController: ControllerBase
         return auction;
     }
 
+    // Endpoint to create a new auction, requires authorization
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto auctionDto)
     {
+        // Map the DTO to the Auction entity
         Auction auction = _mapper.Map<Auction>(auctionDto);
 
+        // Set the seller to the current user
         auction.Seller = User.Identity.Name;
 
+        // Add the auction to the repository
         _repo.AddAuction(auction);
 
-        // Create a message to send to the message brocker
+        // Map the auction to AuctionDto and publish an AuctionCreated event
         AuctionDto newAuction = _mapper.Map<AuctionDto>(auction);
-
         await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
 
-
+        // Save changes to the database
         bool result = await _repo.SaveChangesAsync();
 
         if (!result) return BadRequest("Could not save changes to the DB");
@@ -67,8 +77,9 @@ public class AuctionsController: ControllerBase
         return CreatedAtAction(nameof(GetAuctionById), new {auction.Id}, newAuction);
     }
 
-    [HttpPut("{id}")]
+    // Endpoint to update an existing auction by its ID
 
+    [HttpPut("{id}")]
     public async Task<ActionResult> UpdateAuction(Guid id, UpdateAuctionDto updateAuctionDto)
     {
         Auction auction = await _repo.GetAuctionEntityByIdAsync(id);
@@ -98,6 +109,8 @@ public class AuctionsController: ControllerBase
 
         return Ok("The auction has been updated successfully");
     }
+
+    // Endpoint to delete an auction by its ID
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteAuction(Guid id)

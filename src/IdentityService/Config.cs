@@ -2,16 +2,22 @@
 
 namespace IdentityService;
 
+// Static configuration class for IdentityServer settings
 public static class Config
 {
     public static IEnumerable<IdentityResource> IdentityResources =>
+
+        // Identity resources available in the system
         new IdentityResource[]
         {
-            new IdentityResources.OpenId(),
-            new IdentityResources.Profile(),
+            new IdentityResources.OpenId(), // OpenID Connect identity resource
+            new IdentityResources.Profile(),  // Profile identity resource for user profile information
         };
 
+    // API scopes available in the system
     public static IEnumerable<ApiScope> ApiScopes =>
+
+        // API scope for auction application with full access
         new ApiScope[]
         {
             new ApiScope("auctionApp", "Auction app full access"),
@@ -20,7 +26,7 @@ public static class Config
     public static IEnumerable<Client> Clients =>
         new Client[]
         {
-            // m2m client credentials flow client
+           // Example of a machine-to-machine (m2m) client using client credentials flow
             //new Client
             //{
             //    ClientId = "m2m.client",
@@ -32,7 +38,7 @@ public static class Config
             //    AllowedScopes = { "scope1" }
             //},
 
-            // add postman client
+             // Client configuration for Postman
 
             new Client
             {
@@ -43,6 +49,8 @@ public static class Config
                 ClientSecrets = new []{new Secret("NotASecret".Sha256())},
                 AllowedGrantTypes = {GrantType.ResourceOwnerPassword}
             },
+
+            // Client configuration for a Next.js application
 
             new Client
             {
