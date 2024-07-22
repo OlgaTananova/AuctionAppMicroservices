@@ -14,8 +14,9 @@ public class SearchController : ControllerBase
         // Get all items from the db
         var query = DB.PagedSearch<Item, Item>();
 
-        // Sort the query by make
-        query.Sort(x => x.Ascending(a => a.Make));
+        foreach(var item in query){
+
+        }
 
         // if the search param is not empty - do the search using indexes
         if (!string.IsNullOrEmpty(searchParams.SearchTerm))
@@ -26,7 +27,8 @@ public class SearchController : ControllerBase
         // Sort the query
         query = searchParams.OrderBy switch
         {
-            "make" => query.Sort(x => x.Ascending(a => a.Make)),
+            "make" => query.Sort(x => x.Ascending(a => a.Make))
+                            .Sort(x=> x.Ascending(a=> a.Model)),
             "new" => query.Sort(x => x.Descending(a => a.CreatedAt)),
             _ => query.Sort(x => x.Ascending(a => a.AuctionEnd)),
         };
