@@ -14,9 +14,6 @@ public class SearchController : ControllerBase
         // Get all items from the db
         var query = DB.PagedSearch<Item, Item>();
 
-        foreach(var item in query){
-
-        }
 
         // if the search param is not empty - do the search using indexes
         if (!string.IsNullOrEmpty(searchParams.SearchTerm))
@@ -28,18 +25,18 @@ public class SearchController : ControllerBase
         query = searchParams.OrderBy switch
         {
             "make" => query.Sort(x => x.Ascending(a => a.Make))
-                            .Sort(x=> x.Ascending(a=> a.Model)),
+                            .Sort(x => x.Ascending(a => a.Model)),
             "new" => query.Sort(x => x.Descending(a => a.CreatedAt)),
             _ => query.Sort(x => x.Ascending(a => a.AuctionEnd)),
         };
 
-        // filter the query
-        query = searchParams.FilerBy switch
-        {
-            "finished" => query.Match(x => x.AuctionEnd < DateTime.UtcNow),
-            "endingSoon" => query.Match(x => x.AuctionEnd < DateTime.UtcNow.AddHours(6) && x.AuctionEnd > DateTime.UtcNow),
-            _ => query.Match(x => x.AuctionEnd > DateTime.UtcNow)
-        };
+            query = searchParams.FilerBy switch
+            {
+                "finished" => query.Match(x => x.AuctionEnd < DateTime.UtcNow),
+                "endingSoon" => query.Match(x => x.AuctionEnd < DateTime.UtcNow.AddHours(6) && x.AuctionEnd > DateTime.UtcNow),
+                _ => query.Match(x => x.AuctionEnd > DateTime.UtcNow)
+            };
+
 
         if (!string.IsNullOrEmpty(searchParams.Seller))
         {
@@ -58,6 +55,7 @@ public class SearchController : ControllerBase
         query.PageSize(searchParams.PageSize);
 
         var result = await query.ExecuteAsync();
+        Console.WriteLine(result.Results);
         return Ok(new
         {
             result = result.Results,
