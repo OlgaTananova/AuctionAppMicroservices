@@ -40,7 +40,6 @@ export default function Listings() {
 
   useEffect(() => {
     const url = qs.stringifyUrl({ url: '', query: params })
-    console.log(url);
     getData(url).then(data => {
       setData(data);
     })

@@ -30,7 +30,7 @@ public class SearchController : ControllerBase
             _ => query.Sort(x => x.Ascending(a => a.AuctionEnd)),
         };
 
-            query = searchParams.FilerBy switch
+            query = searchParams.FilterBy switch
             {
                 "finished" => query.Match(x => x.AuctionEnd < DateTime.UtcNow),
                 "endingSoon" => query.Match(x => x.AuctionEnd < DateTime.UtcNow.AddHours(6) && x.AuctionEnd > DateTime.UtcNow),
@@ -55,7 +55,7 @@ public class SearchController : ControllerBase
         query.PageSize(searchParams.PageSize);
 
         var result = await query.ExecuteAsync();
-        Console.WriteLine(result.Results);
+        Console.WriteLine(result.Results.Count);
         return Ok(new
         {
             result = result.Results,
