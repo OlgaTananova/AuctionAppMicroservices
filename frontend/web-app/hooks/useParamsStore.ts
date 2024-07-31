@@ -9,7 +9,9 @@ type State = {
     searchTerm: string
     searchValue: string,
     orderBy: string,
-    filterBy: string
+    filterBy: string,
+    seller?: string, 
+    winner?: string
 }
 
 type Actions = {
@@ -25,7 +27,9 @@ const initialState: State = {
     searchTerm: '',
     searchValue: '',
     orderBy: 'make',
-    filterBy: ''
+    filterBy: 'live',
+    seller: undefined,
+    winner: undefined
 }
 
 

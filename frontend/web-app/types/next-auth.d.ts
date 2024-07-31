@@ -6,6 +6,7 @@ declare module 'next-auth' {
     // Extending the Session interface to include a username property within the user object
     interface Session {
         user: {
+            id: string
             username: string  // Adding username property to the user object
         } & DefaultSession['user']  // Merging with the default user properties from DefaultSession
     }
@@ -14,6 +15,11 @@ declare module 'next-auth' {
     interface Profile {
         username: string  // Adding username property to the Profile interface
     }
+
+    interface User {
+        username: string
+    }
+
 }
 
 // Extending the 'next-auth/jwt' module to add custom properties to the JWT interface
