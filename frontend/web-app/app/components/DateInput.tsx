@@ -8,7 +8,9 @@ type Props = {
     label: string,
     type?: string,
     showLabel?: boolean
-} & UseControllerProps & Partial<ReactDatePickerCustomHeaderProps>
+    dateFormat: string
+    showTimeSelect: boolean
+} & UseControllerProps 
 
 export default function DateInput(props: Props) {
     const { fieldState, field } = useController({ ...props, defaultValue: '' });

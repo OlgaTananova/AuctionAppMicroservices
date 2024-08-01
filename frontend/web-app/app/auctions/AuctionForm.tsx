@@ -4,18 +4,51 @@ import React, { useEffect } from 'react'
 import { FieldValues, set, useForm } from 'react-hook-form';
 import Input from '../components/Input';
 import DateInput from '../components/DateInput';
+import { createAuction, updateAuction, updateAuctionTest } from '../actions/auctionAction';
+import { usePathname, useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { Auction } from '@/types';
 
-export default function AuctionForm() {
-    const { control, handleSubmit, setFocus, formState: { isSubmitting, isValid, isDirty, errors } } = useForm({
+type Props = {
+    auction?: Auction
+}
+
+export default function AuctionForm({ auction }: Props) {
+    const router = useRouter();
+    const pathName = usePathname();
+    const { control, handleSubmit, setFocus, reset, formState: { isSubmitting, isValid, isDirty, errors } } = useForm({
         mode: 'onTouched'
     });
 
     useEffect(() => {
+
+        if (auction) {
+            const { make, model, color, milage, year } = auction;
+            reset({ make, model, color, milage, year });
+        }
         setFocus('make')
     }, [setFocus])
 
-    function onSubmit(data: FieldValues) {
-        console.log(data)
+    async function onSubmit(data: FieldValues) {
+        try {
+            let id = '';
+            let res;
+            if (pathName === '/auction/create') {
+                res = await createAuction(data);
+                id = res.id;
+            } else {
+                if (auction) {
+                    res = await updateAuction(data, auction.id);
+                    id = auction.id;
+                }
+            }
+            if (res.error) {
+                throw res.error;
+            }
+            router.push(`/auctions/details/${id}`)
+        } catch (error: any) {
+            toast.error(error.status + ' ' + error.message)
+        }
     }
     return (
         <form className='flex flex-col mt-3' onSubmit={handleSubmit(onSubmit)}>
@@ -26,21 +59,26 @@ export default function AuctionForm() {
                 <Input label="Year" name='year' control={control} type={'number'} rules={{ required: "Year is required" }} />
                 <Input label="Mileage" name='milage' control={control} type='number' rules={{ required: "Mileage is required" }} />
             </div>
-            <Input label="Image Url" name='imageUrl' control={control} rules={{ required: "Image Url is required" }} />
+            {pathName === '/auctions/create' &&
+                <>
+                    <Input label="Image Url" name='imageUrl' control={control} rules={{ required: "Image Url is required" }} />
 
-            <div className='grid grid-cols-2 gap-3'>
-                <Input label="Reserve Price(enter 0 if no reserve)" name='reservePrice' control={control} type={'number'} rules={{ required: "Reserve price is required" }} />
-                <DateInput label="Auction end date/time"
-                    name='auctionEnd' control={control}
-                    rules={{ required: "Auction end date/time is required" }}
-                    //dateFormat='dd MMMM yyyy h:mm a'
-                    //showTimeSelect 
-                    />
-            </div>
+                    <div className='grid grid-cols-2 gap-3'>
+                        <Input label="Reserve Price(enter 0 if no reserve)" name='reservePrice' control={control} type={'number'} rules={{ required: "Reserve price is required" }} />
+                        <DateInput label="Auction end date/time"
+                            name='auctionEnd' control={control}
+                            rules={{ required: "Auction end date/time is required" }}
+                            dateFormat='dd MMMM yyyy h:mm a'
+                            showTimeSelect
+                        />
+                    </div>
+
+                </>
+            }
             <div className='flex justify-between'>
                 <Button outline color='gray'>Cancel</Button>
                 <Button isProcessing={isSubmitting}
-
+                    disabled={!isValid}
                     type='submit'
                     outline color="success">Submit</Button>
             </div>
