@@ -18,7 +18,7 @@ namespace AuctionService.Consumers
         {
             Console.WriteLine("--> Consuming bid placed");
 
-            Auction auction = await _dbcontext.Auctions.FindAsync(context.Message.AuctionId);
+            Auction auction = await _dbcontext.Auctions.FindAsync(Guid.Parse(context.Message.AuctionId));
 
             // Check if there is no current high bid or if the new bid is accepted and higher than the current high bid
 
