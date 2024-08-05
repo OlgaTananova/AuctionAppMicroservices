@@ -43,6 +43,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Add Automapper to map entities to dtos
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// Add background service to check the finished auctions
+builder.Services.AddHostedService<CheckAuctionFinished>();
+
+
 
 var app = builder.Build();
 
