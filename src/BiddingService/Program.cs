@@ -16,6 +16,7 @@ builder.Services.AddMassTransit(x =>
 {
     // Add consumers
     x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
+    
 
     // Set the endpoint name formatter to use kebab case
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("bids", false));
@@ -45,6 +46,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // Add background service to check the finished auctions
 builder.Services.AddHostedService<CheckAuctionFinished>();
+// Add Grpc service to the container
+builder.Services.AddScoped<GrpcAuctionClient>();
 
 
 
