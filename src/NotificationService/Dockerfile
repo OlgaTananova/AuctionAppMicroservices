@@ -18,16 +18,18 @@ COPY src/IdentityService/IdentityService.csproj src/IdentityService/IdentityServ
 COPY tests/AuctionService.UnitTests/AuctionService.UnitTests.csproj tests/AuctionService.UnitTests/AuctionService.UnitTests.csproj
 COPY tests/AuctionService.IntegrationTests/AuctionService.IntegrationTests.csproj tests/AuctionService.IntegrationTests/AuctionService.IntegrationTests.csproj
 
+
 # Restore package deps
 RUN dotnet restore AuctionAppMicroservices.sln
 
 # Copy the app folders over 
-COPY src/IdentityService src/IdentityService
-WORKDIR /app/src/IdentityService
+COPY src/NotificationService src/NotificationService
+COPY src/Contracts src/Contracts
+WORKDIR /app/src/NotificationService
 RUN dotnet publish -c Release -o /app/src/out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/src/out .
-ENTRYPOINT ["dotnet", "IdentityService.dll"]
+ENTRYPOINT ["dotnet", "NotificationService.dll"]
