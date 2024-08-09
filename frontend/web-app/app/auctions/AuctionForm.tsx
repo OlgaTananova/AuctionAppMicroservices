@@ -27,13 +27,13 @@ export default function AuctionForm({ auction }: Props) {
             reset({ make, model, color, milage, year });
         }
         setFocus('make')
-    }, [setFocus])
+    }, [setFocus, auction, reset])
 
     async function onSubmit(data: FieldValues) {
         try {
             let id = '';
             let res;
-            if (pathName === '/auction/create') {
+            if (pathName === '/auctions/create') {
                 res = await createAuction(data);
                 id = res.id;
             } else {

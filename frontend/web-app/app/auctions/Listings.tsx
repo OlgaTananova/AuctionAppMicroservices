@@ -1,16 +1,14 @@
 'use client'
-import React, { useEffect, useState } from 'react'
-import AuctionCard from './AuctionCard';
-import { Auction, PagedResult } from '../../types/index'
-import AppPagination from '../components/AppPagination';
-import { getData } from '../actions/auctionAction';
-import Filters from './Filters';
-import { useParams } from 'next/navigation';
-import { useParamsStore } from '@/hooks/useParamsStore';
-import { shallow } from 'zustand/shallow';
+import { useAuctionStore } from "@/hooks/useAuctionStore";
+import { useParamsStore } from "@/hooks/useParamsStore";
+import { useEffect } from "react";
+import { shallow } from "zustand/shallow";
+import { getData } from "../actions/auctionAction";
+import AppPagination from "../components/AppPagination";
+import EmptyFilter from "../components/EmptyFilter";
+import AuctionCard from "./AuctionCard";
+import Filters from "./Filters";
 import qs from 'query-string';
-import EmptyFilter from '../components/EmptyFilter';
-import { useAuctionStore } from '@/hooks/useAuctionStore';
 
 
 export default function Listings() {

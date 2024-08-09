@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
 import { getToken } from "next-auth/jwt";
 import { cookies, headers } from "next/headers";
 import { NextApiRequest } from "next";
+import authOptions from "../api/auth/[...nextauth]/options";
+
 
 // Function to get the server-side session using NextAuth options
 export async function getSession() {
