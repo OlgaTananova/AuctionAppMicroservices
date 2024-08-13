@@ -5,6 +5,7 @@ using Npgsql;
 using AuctionService.Consumers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using AuctionService;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,11 @@ builder.Services.AddMassTransit(x =>
     // Configure RabbitMQ with host and credentials from configuration
     x.UsingRabbitMq((context, cfg) =>
     {
+        cfg.UseMessageRetry(r => {
+            r.Handle<RabbitMqConnectionException>();
+            r.Interval(5, TimeSpan.FromSeconds(10));
+        });
+
         cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
             host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
             host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
@@ -92,17 +98,12 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapGrpcService<GrpcAuctionService>();
 
-try
-{
-    // Initialize the database
-    DbInitializer.InitDb(app);
+var retryPolicy = Policy
+.Handle<NpgsqlException>()
+.WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(10));
 
-}
-catch (Exception e)
-{
+retryPolicy.ExecuteAndCapture(() => DbInitializer.InitDb(app));
 
-    Console.WriteLine(e.Message);
-}
 // Configure the Kestrel server to listen on port 7001
 //app.Urls.Add("http://localhost:7001");
 

@@ -3,6 +3,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using MongoDB.Driver;
 using MongoDB.Entities;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +17,7 @@ builder.Services.AddMassTransit(x =>
 {
     // Add consumers
     x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
-    
+
 
     // Set the endpoint name formatter to use kebab case
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("bids", false));
@@ -24,7 +25,13 @@ builder.Services.AddMassTransit(x =>
     // Configure RabbitMQ with host and credentials from configuration
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
+        cfg.UseMessageRetry(r =>
+        {
+            r.Handle<RabbitMqConnectionException>();
+            r.Interval(5, TimeSpan.FromSeconds(10));
+        });
+        cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host =>
+        {
             host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
             host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
         });
@@ -49,16 +56,19 @@ builder.Services.AddHostedService<CheckAuctionFinished>();
 // Add Grpc service to the container
 builder.Services.AddScoped<GrpcAuctionClient>();
 
-
-
 var app = builder.Build();
-
 
 app.UseAuthorization();
 
 app.MapControllers();
 
-await DB.InitAsync("BidDb", MongoClientSettings
-.FromConnectionString(builder.Configuration.GetConnectionString("BidDbConnection")));
+await Policy.Handle<TimeoutException>()
+  .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(10))
+  .ExecuteAndCaptureAsync(async () =>
+  {
+      await DB.InitAsync("BidDb", MongoClientSettings
+            .FromConnectionString(builder.Configuration.GetConnectionString("BidDbConnection")));
+  });
+
 
 app.Run();

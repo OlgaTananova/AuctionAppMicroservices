@@ -25,6 +25,11 @@ builder.Services.AddMassTransit(async x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+          cfg.UseMessageRetry(r => {
+            r.Handle<RabbitMqConnectionException>();
+            r.Interval(5, TimeSpan.FromSeconds(10));
+        });
+
          cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host => {
             host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
             host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
@@ -45,21 +50,17 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-
 app.UseAuthorization();
 
 app.MapControllers();
 
 // wrap a call to the Auction Service in the DbIntializer method in a block that runs after the application has started. 
 app.Lifetime.ApplicationStarted.Register(async () =>{
-  try
 {
-    await DbInitializer.InitDb(app);
+    await Policy.Handle<TimeoutException>()
+    .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(10))
+    .ExecuteAndCaptureAsync(async () => await DbInitializer.InitDb(app));
 }
-catch (Exception e)
-{
-    Console.WriteLine(e.ToString());
-}  
 });
 
 app.Run();

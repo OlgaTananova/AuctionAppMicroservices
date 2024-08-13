@@ -1,4 +1,6 @@
 ﻿using IdentityService;
+using Npgsql;
+using Polly;
 using Serilog;
 
 // Initialize the Serilog logger with console output for bootstrap logging
@@ -24,11 +26,18 @@ try
         .ConfigureServices()
         .ConfigurePipeline();
 
+
     // this seeding is only for the template to bootstrap the DB and users.
     // in production you will likely want a different approach.
 
-    // Seed the database with initial data; suitable for development or bootstrap scenarios
-    SeedData.EnsureSeedData(app);
+    // Seed the database with initial data; suitable for development or bootstrap scenarios      
+    var retryPolicy = Policy
+    .Handle<NpgsqlException>()
+    .WaitAndRetry(5, retryAttempt => TimeSpan.FromSeconds(10));
+
+    retryPolicy.ExecuteAndCapture(() => SeedData.EnsureSeedData(app));
+
+
 
     app.Run();
 }

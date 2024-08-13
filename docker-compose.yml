@@ -135,7 +135,7 @@ services:
     depends_on:
       - rabbitmq
     networks:
-      custom:  oc
+      custom:
   web-app:
     image: olgatan/web-app:latest
     build: 
