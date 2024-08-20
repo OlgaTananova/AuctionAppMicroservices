@@ -4,3 +4,7 @@ GithubRepo: https://github.com/TryCatchLearn/Carsties
 'alice'
 
 Pass123$
+
+DigitalOcean
+
+5kY/32rUUN6,jKS

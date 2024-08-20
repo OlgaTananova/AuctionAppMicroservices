@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=postgrespw
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  identity-svc:
+    image: olgatan/identity-svc:latest
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ClientApp=https://app.carsties.com
+      - ConnectionStrings__DefaultConnection=Server=postgres;User Id=postgres;Password=postgrespw;Database=identity
+      - WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+    ports:
+      - 80:80
+
+volumes:
+  pgdata:
