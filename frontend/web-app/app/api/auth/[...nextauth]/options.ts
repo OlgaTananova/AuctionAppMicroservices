@@ -10,7 +10,7 @@ const authOptions: NextAuthOptions = {
         DuendeIdentityServer6({
             id: 'id-server',  // Unique identifier for the provider
             clientId: 'nextApp',  // Client ID for the application
-            clientSecret: 'secret',  // Client secret for the application
+            clientSecret: process.env.CLIENT_SECRET!,  // Client secret for the application
             issuer: process.env.ID_URL,  // URL of the Identity Server
             authorization: { params: { scope: 'openid profile auctionApp' } },  // Authorization parameters
             idToken: true  // Indicate that an ID token should be returned
