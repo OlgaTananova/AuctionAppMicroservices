@@ -14,18 +14,27 @@ spec:
       containers:
       - name: search-svc
         image: olgatan/search-svc
-        imagePullPolicy: Never
-        env: 
-        - name: RabbitMq__Host
-          value: rabbit-clusterip
-        - name: RabbitMq__Username
-          value: rabbit
-        - name: RabbitMq__Password
-          value: rabbit
-        - name: ConnectionStrings__MongoDbConnection
-          value: mongodb://root:mongopw@mongo-clusterip
-        - name: AuctionServiceUrl
-          value: http://auction-clusterip  
+        imagePullPolicy: Always
+        env:
+          - name: RabbitMq__Host
+            value: rabbit-clusterip
+          - name: RabbitMq__Username
+            valueFrom:
+              secretKeyRef:
+                name: search-secret
+                key: rabbitUn
+          - name: RabbitMq__Password
+            valueFrom:
+              secretKeyRef:
+                name: search-secret
+                key: rabbitPw
+          - name: ConnectionStrings__MongoDbConnection
+            valueFrom:
+              secretKeyRef:
+                name: search-secret
+                key: connString
+          - name: AuctionServiceUrl
+            value: http://auction-clusterip
 ---
 apiVersion: v1
 kind: Service

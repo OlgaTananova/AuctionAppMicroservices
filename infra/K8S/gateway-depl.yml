@@ -14,10 +14,12 @@ spec:
       containers:
       - name: gateway-svc
         image: olgatan/gateway-svc
-        imagePullPolicy: Never
-        env: 
+        imagePullPolicy: Always
+        env:
           - name: ClientApp
             value: https://app.carsties.com
+          - name: IdentityServiceUrl
+            value: https://id.familyplanner.online
 ---
 apiVersion: v1
 kind: Service
@@ -30,5 +32,3 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-            
-

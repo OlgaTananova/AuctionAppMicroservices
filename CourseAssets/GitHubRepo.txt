@@ -8,3 +8,5 @@ Pass123$
 DigitalOcean
 
 5kY/32rUUN6,jKS
+
+Digital Ocean: dop_v1_66f1de5d87470783ea0a13b5f4c4dca24bdb9845429de40d11d9a51072f412bb
